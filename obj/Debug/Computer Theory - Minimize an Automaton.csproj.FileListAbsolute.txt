@@ -1,10 +1,10 @@
 C:\Users\DELL\source\repos\Computer Theory - Minimize an Automaton\Computer Theory - Minimize an Automaton\bin\Debug\Computer Theory - Minimize an Automaton.exe.config
 C:\Users\DELL\source\repos\Computer Theory - Minimize an Automaton\Computer Theory - Minimize an Automaton\bin\Debug\Computer Theory - Minimize an Automaton.exe
 C:\Users\DELL\source\repos\Computer Theory - Minimize an Automaton\Computer Theory - Minimize an Automaton\bin\Debug\Computer Theory - Minimize an Automaton.pdb
-C:\Users\DELL\source\repos\Computer Theory - Minimize an Automaton\Computer Theory - Minimize an Automaton\obj\Debug\Computer Theory - Minimize an Automaton.csprojAssemblyReference.cache
+C:\Users\DELL\source\repos\Computer Theory - Minimize an Automaton\Computer Theory - Minimize an Automaton\obj\Debug\Computer_Theory___Minimize_an_Automaton.Form1.resources
 C:\Users\DELL\source\repos\Computer Theory - Minimize an Automaton\Computer Theory - Minimize an Automaton\obj\Debug\Computer_Theory___Minimize_an_Automaton.Properties.Resources.resources
 C:\Users\DELL\source\repos\Computer Theory - Minimize an Automaton\Computer Theory - Minimize an Automaton\obj\Debug\Computer Theory - Minimize an Automaton.csproj.GenerateResource.cache
 C:\Users\DELL\source\repos\Computer Theory - Minimize an Automaton\Computer Theory - Minimize an Automaton\obj\Debug\Computer Theory - Minimize an Automaton.csproj.CoreCompileInputs.cache
 C:\Users\DELL\source\repos\Computer Theory - Minimize an Automaton\Computer Theory - Minimize an Automaton\obj\Debug\Computer Theory - Minimize an Automaton.exe
 C:\Users\DELL\source\repos\Computer Theory - Minimize an Automaton\Computer Theory - Minimize an Automaton\obj\Debug\Computer Theory - Minimize an Automaton.pdb
-C:\Users\DELL\source\repos\Computer Theory - Minimize an Automaton\Computer Theory - Minimize an Automaton\obj\Debug\Computer_Theory___Minimize_an_Automaton.Form1.resources
+C:\Users\DELL\source\repos\Computer Theory - Minimize an Automaton\Computer Theory - Minimize an Automaton\obj\Debug\Computer Theory - Minimize an Automaton.csprojAssemblyReference.cache
