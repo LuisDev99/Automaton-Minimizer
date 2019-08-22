@@ -8,7 +8,7 @@ using System.Xml;
 
 namespace Computer_Theory___Minimize_an_Automaton
 {
-    
+
     class JffReader
     {
         public string file_path { get; set; }
@@ -30,6 +30,7 @@ namespace Computer_Theory___Minimize_an_Automaton
                     return;
                 }
             }
+
         }
 
         public void Read_jff_file()
@@ -111,14 +112,25 @@ namespace Computer_Theory___Minimize_an_Automaton
 
         public void Minimize_Automaton()
         {
-            byte[,] arraee = new byte[1, 1];
-            //arraee[0, 1] = 2;
 
-            /* First, find an unreacheable state */
+            StateNode[] vertical_states, horizontal_states;
+            byte[][] stair_array;
+
+            /* First, find unreacheable states and delete them */
             Delete_Unreacheable_States();
 
-            /* Then, create the 2D stair array */
-            bool is_any_state_distinct = Distinct_State();
+            /*Create*/
+            vertical_states = new StateNode[state_nodes.Count - 1];
+            horizontal_states = new StateNode[state_nodes.Count - 1];
+            stair_array = new byte[state_nodes.Count - 1][];
+
+            /* Then, build the 2D stair array */
+            Build_2D_Stair_Array(ref stair_array);
+            Build_Vertical_State_Array(ref vertical_states);
+            Build_Horizontal_State_Array(ref horizontal_states);
+
+            /* Then, mark those states that are distintive from one another */
+            bool is_any_state_distinct = Distinct_State(vertical_states, horizontal_states, ref stair_array);
 
             /* If no state was distinct from one or another, then just stop the algorithm */
             if (!is_any_state_distinct)
@@ -138,6 +150,30 @@ namespace Computer_Theory___Minimize_an_Automaton
 
         }
 
+        private void Build_Horizontal_State_Array(ref StateNode[] horizontal_states)
+        {
+            for (int i = 0; i < state_nodes.Count - 1; i++)
+            {
+                horizontal_states[i] = state_nodes[i];
+            }
+        }
+
+        private void Build_Vertical_State_Array(ref StateNode[] vertical_states)
+        {
+            for(int i = 0; i < state_nodes.Count - 1; i++)
+            {
+                vertical_states[i] = state_nodes[i + 1];
+            }
+        }
+
+        private void Build_2D_Stair_Array(ref byte[][] stair_array)
+        {
+            for (int i = 0; i < state_nodes.Count - 1; i++)
+            {
+                stair_array[i] = new byte[i + 1];
+            }
+        }
+
         /// <summary>
         ///     Function that will find in the 2D array, any state that can be merge into a single one
         ///     And then converts the stair 2D array into a list of StateNode objects
@@ -153,9 +189,33 @@ namespace Computer_Theory___Minimize_an_Automaton
             return true;
         }
 
-        private bool Distinct_State()
+        /// <summary>
+        ///     First function that gets call when starting the minimize algorithm
+        ///     Compares two nodes and marks inside the array if they are initial and final states
+        /// </summary>
+        /// <param name="stair_array">Gets by reference the stair array</param>
+        /// <returns></returns>
+        private bool Distinct_State(StateNode[] vArray, StateNode[] hArray, ref byte[][] stair_array)
         {
-            return true;
+            bool was_a_state_distinct = false;
+
+            for(int i = 0; i < state_nodes.Count - 1; i++) // V for vArray
+            {
+                for(int j = 0; j < state_nodes.Count - 1; j++) // J for hArray
+                {
+                    if (vArray[i].isFinal != hArray[j].isFinal) //If they are distinct
+                    {
+                        //J is for the horizontal indexes, so verify if this nodes that are being compare are inside the stair by just looking if j is less than the array index i
+                        if(j < stair_array[i].Length)
+                        {
+                            stair_array[i][j] = 5; //TODO: Change this to zero
+                            was_a_state_distinct = true;
+                        }
+                    }
+                }
+            }
+
+            return was_a_state_distinct;
         }
 
         /// <summary>
@@ -181,9 +241,10 @@ namespace Computer_Theory___Minimize_an_Automaton
             {
                 if(has_someone_pointing[i] == false)
                 {
+                    /* Search the node with the index that matches the id to delete it, cuz that index says this node isnt being pointed at */
                     foreach(StateNode node in state_nodes)
                     {
-                        if(node.id == i)
+                        if(node.id == i && !node.isInitial)
                         {
                             state_nodes.Remove(node);
                             break;
