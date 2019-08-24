@@ -13,10 +13,13 @@ namespace Computer_Theory___Minimize_an_Automaton
     {
         public string file_path { get; set; }
         public List<StateNode> state_nodes;
+        public List<string> alphabet;
+
         public JffReader(string _file_path)
         {
             this.file_path = _file_path;
             this.state_nodes = new List<StateNode>();
+            this.alphabet = new List<string>();
             Read_jff_file();
         }
 
@@ -100,7 +103,12 @@ namespace Computer_Theory___Minimize_an_Automaton
                                     //we have to find the node with the id that matches "from", and set that node
                                     //its transition's properties
                                     read = transition.FirstChild.Value;
+
                                     Search_and_Add_Node_Transition(from, to, read);
+
+                                    if (!this.alphabet.Any( e => e == read))
+                                        this.alphabet.Add(read);
+
                                     break;
                                 }
                             }
@@ -114,7 +122,7 @@ namespace Computer_Theory___Minimize_an_Automaton
         {
 
             StateNode[] vertical_states, horizontal_states;
-            byte[][] stair_array;
+            sbyte[][] stair_array;
 
             /* First, find unreacheable states and delete them */
             Delete_Unreacheable_States();
@@ -122,7 +130,7 @@ namespace Computer_Theory___Minimize_an_Automaton
             /*Create*/
             vertical_states = new StateNode[state_nodes.Count - 1];
             horizontal_states = new StateNode[state_nodes.Count - 1];
-            stair_array = new byte[state_nodes.Count - 1][];
+            stair_array = new sbyte[state_nodes.Count - 1][];
 
             /* Then, build the 2D stair array */
             Build_2D_Stair_Array(ref stair_array);
@@ -130,7 +138,7 @@ namespace Computer_Theory___Minimize_an_Automaton
             Build_Horizontal_State_Array(ref horizontal_states);
 
             /* Then, mark those states that are distintive from one another */
-            bool is_any_state_distinct = Distinct_State(vertical_states, horizontal_states, ref stair_array);
+            bool is_any_state_distinct = Find_Distinct_State(vertical_states, horizontal_states, ref stair_array);
 
             /* If no state was distinct from one or another, then just stop the algorithm */
             if (!is_any_state_distinct)
@@ -138,16 +146,240 @@ namespace Computer_Theory___Minimize_an_Automaton
 
             /* Keep doing a while loop till no new distinct states appear */
             bool did_new_state_appear = false;
+            sbyte counter = 1;
+           
             do
             {
-                did_new_state_appear = Mark_Distinct_State();
+                did_new_state_appear = Mark_Distinct_State(vertical_states, horizontal_states, ref stair_array, counter);
+                counter++;
                 
             } while (did_new_state_appear);
 
-
+   
             /* Now, create merge new states into a single one and also convert the 2D array to list array */
-            state_nodes = Convert_To_List();
+            state_nodes = Convert_To_List(); //TODO: This, convert all the empty spaces from the stair array into a single statenode, merging all of its transitions
 
+        }
+
+        private bool Mark_Distinct_State(StateNode[] vArray, StateNode[] hArray, ref sbyte[][] stair_array, sbyte counter)
+        {
+            bool was_a_state_distinct = false;
+
+            for (int i = 0; i < state_nodes.Count - 1; i++) // i for vArray
+            {
+                for (int j = 0; j < stair_array[i].Length; j++) // J for hArray
+                {
+                    int previous_count = counter - 1;
+                    if(RelationShip_Exist_Between_State(vArray[i], hArray[j], stair_array, Convert.ToSByte(previous_count), vArray, hArray))
+                    {
+                        if(stair_array[i][j] == -1) //Only mark if that spot was empty only
+                            stair_array[i][j] = counter;
+
+                        was_a_state_distinct = true;
+                    }
+                }
+            }
+
+            return was_a_state_distinct;
+        }
+
+        private bool RelationShip_Exist_Between_State(StateNode vState, StateNode hState, sbyte[][] stair_array, sbyte counter, StateNode[] vArray, StateNode[] hArray)
+        {
+            /*
+             * (1,a) = 2        (1,b) = 6
+             * (2,a) = 7        (2,b) = 3
+             * ---------------------------
+             * (2,7) = no       (6,3) = ?
+             * (7,2) = ?        (3,6) = si
+             */
+
+            sbyte nextCount = Convert.ToSByte(counter + 1);
+
+            #region Primera Tupla Con Letra A
+            //Get both state's destination with the first letter of the alphabet
+            int firstPairID_1 = Get_Destination_From_State(vState, this.alphabet[0]); //(first_state, a) = 2, returns -1 if this state didnt have a destination
+            int firstPairID_2 = Get_Destination_From_State(hState, this.alphabet[0]); //(second_state, a) = 7
+
+            //Find this ID its real index from the vertical and horizontal position
+            for (int i = 0; i < state_nodes.Count - 1; i++)
+            {
+                if (vArray[i].id == firstPairID_1)
+                {
+                    firstPairID_1 = i;
+                    break;
+                }
+            }
+
+            //X2
+            for (int i = 0; i < state_nodes.Count - 1; i++)
+            {
+                //Missing by one index! Estoy buscando por id y por nombre y por eso tira indeces diferentes
+                if (hArray[i].id == firstPairID_2)
+                {
+                    firstPairID_2 = i;
+                    break;
+                }
+            }
+
+            // (7,2) Check the stair array if this tuple has a mark available with the current counter in that position
+            if (firstPairID_1 != -1 && firstPairID_2 != -1)
+            {
+                // (7,2)
+                if (firstPairID_2 < stair_array[firstPairID_1].Length)
+                {
+                    if (stair_array[firstPairID_1][firstPairID_2] == counter)
+                    {
+                        return true;
+                    }
+                }
+
+            }
+
+            #endregion
+
+            /*--------------------------- Same process but for the second letter of the alphabet ----------------------------------*/
+
+            #region Primera Tupla Con Letra B
+            //Get both state's destination with the second letter of the alphabet
+            int secondPairID_1 = Get_Destination_From_State(vState, this.alphabet[1]); //(first_state, b) = 6
+            int secondPairID_2 = Get_Destination_From_State(hState, this.alphabet[1]); //(second_state, b) = 3
+    
+            //Find this ID its real index from the vertical and horizontal position
+            for (int i = 0; i < state_nodes.Count-1; i++)
+            {
+                if (vArray[i].id == secondPairID_1)
+                {
+                    secondPairID_1 = i;
+                    break;
+                }
+            }
+
+            //X2
+            for (int i = 0; i < state_nodes.Count-1; i++)
+            {
+                if (hArray[i].id == secondPairID_2)
+                {
+                    secondPairID_2 = i;
+                    break;
+                }
+            }
+
+            //(3,6) Check the stair array if this tuple has a mark available with the current counter in that position
+            if (secondPairID_1 != -1 && secondPairID_2 != -1)
+            {
+                //(3, 6)
+                if (secondPairID_2 < stair_array[secondPairID_1].Length) //verify that the second index is inside the array
+                {
+                    if (stair_array[secondPairID_1][secondPairID_2] == counter) //if its inside the range, then check its mark
+                    { 
+                        return true;
+                    }
+
+                }
+            }
+
+            #endregion
+
+            /* -------------------------- Reverse the tuples -------------------------------- */
+
+            #region Primera Tupla Reverse Con Letra A
+            //Get both state's destination with the first letter of the alphabet
+            int reversePairID_1 = Get_Destination_From_State(vState, this.alphabet[0]); //(first_state, a) = 2, returns -1 if this state didnt have a destination
+            int reversePairID_2 = Get_Destination_From_State(hState, this.alphabet[0]); //(second_state, a) = 7
+
+            //Find this ID its real index from the vertical and horizontal position
+            for (int i = 0; i < state_nodes.Count - 1; i++)
+            {
+                if (hArray[i].id == reversePairID_1)
+                {
+                    reversePairID_1 = i;
+                    break;
+                }
+            }
+
+            //X2
+            for (int i = 0; i < state_nodes.Count - 1; i++)
+            {
+                //Missing by one index! Estoy buscando por id y por nombre y por eso tira indeces diferentes
+                if (vArray[i].id == reversePairID_2)
+                {
+                    reversePairID_2 = i;
+                    break;
+                }
+            }
+
+            // (2, 7) Check the stair array if this tuple has a mark available with the current counter in that position
+            if (reversePairID_1 != -1 && reversePairID_2 != -1)
+            {
+                // (2, 7)
+                if (reversePairID_1 < stair_array[reversePairID_2].Length)
+                {
+                    if (stair_array[reversePairID_2][reversePairID_1] == counter)
+                    {
+                        return true;
+                    }
+                }
+
+            }
+
+            #endregion
+
+            /*--------------------------- Same process but for the second letter of the alphabet ----------------------------------*/
+
+            #region Primera Tupla Reverse Con Letra B
+            //Get both state's destination with the second letter of the alphabet
+            int secondReversePairID_1 = Get_Destination_From_State(vState, this.alphabet[1]); //(first_state, b) = 6
+            int secondReversePairID_2 = Get_Destination_From_State(hState, this.alphabet[1]); //(second_state, b) = 3
+
+            //Find this ID its real index from the vertical and horizontal position
+            for (int i = 0; i < state_nodes.Count - 1; i++)
+            {
+                if (hArray[i].id == secondReversePairID_1)
+                {
+                    secondReversePairID_1 = i;
+                    break;
+                }
+            }
+
+            //X2
+            for (int i = 0; i < state_nodes.Count - 1; i++)
+            {
+                if (vArray[i].id == secondReversePairID_2)
+                {
+                    secondReversePairID_2 = i;
+                    break;
+                }
+            }
+
+            //(6, 3) Check the stair array if this tuple has a mark available with the current counter in that position
+            if (secondReversePairID_1 != -1 && secondReversePairID_2 != -1)
+            {
+                //(6, 3)
+                if (secondReversePairID_1 < stair_array[secondReversePairID_2].Length) //verify that the second index is inside the array
+                {
+                    if (stair_array[secondReversePairID_2][secondReversePairID_1] == counter) //if its inside the range, then check its mark
+                    { 
+                        return true;
+                    }
+
+                }
+            }
+
+            #endregion
+
+
+            return false;
+        }
+
+        private int Get_Destination_From_State(StateNode state, string read)
+        {
+            foreach(Transition transition in state.transitions)
+            {
+                if (transition.read == read)
+                    return transition.to; //Return the state's id that this state is pointing to, hence, its destination
+            }
+
+            return -1;
         }
 
         private void Build_Horizontal_State_Array(ref StateNode[] horizontal_states)
@@ -166,11 +398,20 @@ namespace Computer_Theory___Minimize_an_Automaton
             }
         }
 
-        private void Build_2D_Stair_Array(ref byte[][] stair_array)
+        private void Build_2D_Stair_Array(ref sbyte[][] stair_array)
         {
             for (int i = 0; i < state_nodes.Count - 1; i++)
             {
-                stair_array[i] = new byte[i + 1];
+                stair_array[i] = new sbyte[i + 1];
+            }
+
+            /* Initialize all the indexes values to -1 to represent a null value */
+            for(int i = 0; i < state_nodes.Count -1; i++)
+            {
+                for(int j = 0; j < stair_array[i].Length; j++)
+                {
+                    stair_array[i][j] = -1;
+                }
             }
         }
 
@@ -184,33 +425,25 @@ namespace Computer_Theory___Minimize_an_Automaton
             return new List<StateNode>();
         }
 
-        private bool Mark_Distinct_State()
-        {
-            return true;
-        }
-
         /// <summary>
         ///     First function that gets call when starting the minimize algorithm
         ///     Compares two nodes and marks inside the array if they are initial and final states
         /// </summary>
         /// <param name="stair_array">Gets by reference the stair array</param>
         /// <returns></returns>
-        private bool Distinct_State(StateNode[] vArray, StateNode[] hArray, ref byte[][] stair_array)
+        private bool Find_Distinct_State(StateNode[] vArray, StateNode[] hArray, ref sbyte[][] stair_array)
         {
             bool was_a_state_distinct = false;
 
             for(int i = 0; i < state_nodes.Count - 1; i++) // V for vArray
             {
-                for(int j = 0; j < state_nodes.Count - 1; j++) // J for hArray
+                for(int j = 0; j < stair_array[i].Length; j++) // J for hArray
                 {
                     if (vArray[i].isFinal != hArray[j].isFinal) //If they are distinct
                     {
-                        //J is for the horizontal indexes, so verify if this nodes that are being compare are inside the stair by just looking if j is less than the array index i
-                        if(j < stair_array[i].Length)
-                        {
-                            stair_array[i][j] = 5; //TODO: Change this to zero
-                            was_a_state_distinct = true;
-                        }
+                        stair_array[i][j] = 0; //TODO: Change this to zero
+                        was_a_state_distinct = true;
+                        
                     }
                 }
             }
