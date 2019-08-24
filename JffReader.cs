@@ -121,6 +121,15 @@ namespace Computer_Theory___Minimize_an_Automaton
         public void Minimize_Automaton()
         {
 
+            /*
+             *  Vertical States      | stair array
+             *       2              -> []
+             *       3              -> [] []
+             *       4              -> [] [] []
+             *       5              -> [] [] [] []
+             *  Horizontal States ---> 1  2  3  4  
+             */ 
+
             StateNode[] vertical_states, horizontal_states;
             sbyte[][] stair_array;
 
