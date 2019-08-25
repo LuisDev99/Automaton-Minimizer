@@ -77,9 +77,7 @@ namespace Computer_Theory___Minimize_an_Automaton
                 return;
             }
 
-            jff_handler.Minimize_Automaton();
-
-            lblState.Text = "The Loaded Automaton has been Minimized! Try saving it now";
+            lblState.Text = jff_handler.Minimize_Automaton();
         }
     }
 }

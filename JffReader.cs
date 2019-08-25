@@ -23,13 +23,24 @@ namespace Computer_Theory___Minimize_an_Automaton
             Read_jff_file();
         }
 
+        public string Get_State_Name_By(int id)
+        {
+            foreach(StateNode statenode in state_nodes)
+            {
+                if (statenode.id == id)
+                    return statenode.name;
+            }
+
+            return string.Empty;
+        }
+
         public void Search_and_Add_Node_Transition(int from, int to, string read)
         {
             foreach(StateNode statenode in state_nodes)
             {
                 if(statenode.id == from)
                 {
-                    statenode.AddNodeTransition(to, read);
+                    statenode.AddNodeTransition(to, read, Get_State_Name_By(to));
                     return;
                 }
             }
@@ -118,7 +129,7 @@ namespace Computer_Theory___Minimize_an_Automaton
             }
         }
 
-        public void Minimize_Automaton()
+        public string Minimize_Automaton()
         {
 
             /*
@@ -141,7 +152,7 @@ namespace Computer_Theory___Minimize_an_Automaton
             horizontal_states = new StateNode[state_nodes.Count - 1];
             stair_array = new sbyte[state_nodes.Count - 1][];
 
-            /* Then, build the 2D stair array */
+            /* Then, build every array */
             Build_2D_Stair_Array(ref stair_array);
             Build_Vertical_State_Array(ref vertical_states);
             Build_Horizontal_State_Array(ref horizontal_states);
@@ -151,7 +162,7 @@ namespace Computer_Theory___Minimize_an_Automaton
 
             /* If no state was distinct from one or another, then just stop the algorithm */
             if (!is_any_state_distinct)
-                return;
+                return "Automaton is minimized already!";
 
             /* Keep doing a while loop till no new distinct states appear */
             bool did_new_state_appear = false;
@@ -164,10 +175,33 @@ namespace Computer_Theory___Minimize_an_Automaton
                 
             } while (did_new_state_appear);
 
+            /* Check if the automaton was minimized already to send a message that says that the automaton is already minimized */
+
+            if (Automaton_Is_Already_Minimized(stair_array))
+            {
+                return "Automaton is minimized already!";
+            }
+
    
             /* Now, create merge new states into a single one and also convert the 2D array to list array */
-            state_nodes = Convert_To_List(); //TODO: This, convert all the empty spaces from the stair array into a single statenode, merging all of its transitions
+            state_nodes = Convert_To_List(vertical_states, horizontal_states, stair_array); //TODO: This, convert all the empty spaces from the stair array into a single statenode, merging all of its transitions
 
+            return "Success! The loaded automaton is minimized! Try saving it now";
+        }
+
+        private bool Automaton_Is_Already_Minimized(sbyte[][] stair_array)
+        {
+            for(int i = 0; i < state_nodes.Count - 1; i++)
+            {
+                for(int j = 0; j < stair_array[i].Length; j++)
+                {
+                    //if a position is empty (-1) it means that the automaton can be minimized
+                    if (stair_array[i][j] == -1)
+                        return false;
+                }
+            }
+
+            return true;
         }
 
         private bool Mark_Distinct_State(StateNode[] vArray, StateNode[] hArray, ref sbyte[][] stair_array, sbyte counter)
@@ -204,178 +238,95 @@ namespace Computer_Theory___Minimize_an_Automaton
 
             sbyte nextCount = Convert.ToSByte(counter + 1);
 
-            #region Primera Tupla Con Letra A
-            //Get both state's destination with the first letter of the alphabet
-            int firstPairID_1 = Get_Destination_From_State(vState, this.alphabet[0]); //(first_state, a) = 2, returns -1 if this state didnt have a destination
-            int firstPairID_2 = Get_Destination_From_State(hState, this.alphabet[0]); //(second_state, a) = 7
+            //For every letter of the alphabet, check the states relationships
 
-            //Find this ID its real index from the vertical and horizontal position
-            for (int i = 0; i < state_nodes.Count - 1; i++)
+            for(int k = 0; k < this.alphabet.Count; k++)
             {
-                if (vArray[i].id == firstPairID_1)
-                {
-                    firstPairID_1 = i;
-                    break;
-                }
-            }
+                #region Primera Tupla Con Letra
+                //Get both state's destination with the first letter of the alphabet
+                int firstPairID_1 = Get_Destination_From_State(vState, this.alphabet[k]); //(first_state, a) = 2, returns -1 if this state didnt have a destination
+                int firstPairID_2 = Get_Destination_From_State(hState, this.alphabet[k]); //(second_state, a) = 7
 
-            //X2
-            for (int i = 0; i < state_nodes.Count - 1; i++)
-            {
-                //Missing by one index! Estoy buscando por id y por nombre y por eso tira indeces diferentes
-                if (hArray[i].id == firstPairID_2)
+                //Find this ID its real index from the vertical and horizontal position
+                for (int i = 0; i < state_nodes.Count - 1; i++)
                 {
-                    firstPairID_2 = i;
-                    break;
-                }
-            }
-
-            // (7,2) Check the stair array if this tuple has a mark available with the current counter in that position
-            if (firstPairID_1 != -1 && firstPairID_2 != -1)
-            {
-                // (7,2)
-                if (firstPairID_2 < stair_array[firstPairID_1].Length)
-                {
-                    if (stair_array[firstPairID_1][firstPairID_2] == counter)
+                    if (vArray[i].id == firstPairID_1)
                     {
-                        return true;
+                        firstPairID_1 = i;
+                        break;
                     }
                 }
 
-            }
-
-            #endregion
-
-            /*--------------------------- Same process but for the second letter of the alphabet ----------------------------------*/
-
-            #region Primera Tupla Con Letra B
-            //Get both state's destination with the second letter of the alphabet
-            int secondPairID_1 = Get_Destination_From_State(vState, this.alphabet[1]); //(first_state, b) = 6
-            int secondPairID_2 = Get_Destination_From_State(hState, this.alphabet[1]); //(second_state, b) = 3
-    
-            //Find this ID its real index from the vertical and horizontal position
-            for (int i = 0; i < state_nodes.Count-1; i++)
-            {
-                if (vArray[i].id == secondPairID_1)
+                //X2
+                for (int i = 0; i < state_nodes.Count - 1; i++)
                 {
-                    secondPairID_1 = i;
-                    break;
-                }
-            }
-
-            //X2
-            for (int i = 0; i < state_nodes.Count-1; i++)
-            {
-                if (hArray[i].id == secondPairID_2)
-                {
-                    secondPairID_2 = i;
-                    break;
-                }
-            }
-
-            //(3,6) Check the stair array if this tuple has a mark available with the current counter in that position
-            if (secondPairID_1 != -1 && secondPairID_2 != -1)
-            {
-                //(3, 6)
-                if (secondPairID_2 < stair_array[secondPairID_1].Length) //verify that the second index is inside the array
-                {
-                    if (stair_array[secondPairID_1][secondPairID_2] == counter) //if its inside the range, then check its mark
-                    { 
-                        return true;
-                    }
-
-                }
-            }
-
-            #endregion
-
-            /* -------------------------- Reverse the tuples -------------------------------- */
-
-            #region Primera Tupla Reverse Con Letra A
-            //Get both state's destination with the first letter of the alphabet
-            int reversePairID_1 = Get_Destination_From_State(vState, this.alphabet[0]); //(first_state, a) = 2, returns -1 if this state didnt have a destination
-            int reversePairID_2 = Get_Destination_From_State(hState, this.alphabet[0]); //(second_state, a) = 7
-
-            //Find this ID its real index from the vertical and horizontal position
-            for (int i = 0; i < state_nodes.Count - 1; i++)
-            {
-                if (hArray[i].id == reversePairID_1)
-                {
-                    reversePairID_1 = i;
-                    break;
-                }
-            }
-
-            //X2
-            for (int i = 0; i < state_nodes.Count - 1; i++)
-            {
-                //Missing by one index! Estoy buscando por id y por nombre y por eso tira indeces diferentes
-                if (vArray[i].id == reversePairID_2)
-                {
-                    reversePairID_2 = i;
-                    break;
-                }
-            }
-
-            // (2, 7) Check the stair array if this tuple has a mark available with the current counter in that position
-            if (reversePairID_1 != -1 && reversePairID_2 != -1)
-            {
-                // (2, 7)
-                if (reversePairID_1 < stair_array[reversePairID_2].Length)
-                {
-                    if (stair_array[reversePairID_2][reversePairID_1] == counter)
+                    //Missing by one index! Estoy buscando por id y por nombre y por eso tira indeces diferentes
+                    if (hArray[i].id == firstPairID_2)
                     {
-                        return true;
+                        firstPairID_2 = i;
+                        break;
                     }
                 }
 
-            }
-
-            #endregion
-
-            /*--------------------------- Same process but for the second letter of the alphabet ----------------------------------*/
-
-            #region Primera Tupla Reverse Con Letra B
-            //Get both state's destination with the second letter of the alphabet
-            int secondReversePairID_1 = Get_Destination_From_State(vState, this.alphabet[1]); //(first_state, b) = 6
-            int secondReversePairID_2 = Get_Destination_From_State(hState, this.alphabet[1]); //(second_state, b) = 3
-
-            //Find this ID its real index from the vertical and horizontal position
-            for (int i = 0; i < state_nodes.Count - 1; i++)
-            {
-                if (hArray[i].id == secondReversePairID_1)
+                // (7,2) Check the stair array if this tuple has a mark available with the current counter in that position
+                if (firstPairID_1 != -1 && firstPairID_2 != -1)
                 {
-                    secondReversePairID_1 = i;
-                    break;
-                }
-            }
-
-            //X2
-            for (int i = 0; i < state_nodes.Count - 1; i++)
-            {
-                if (vArray[i].id == secondReversePairID_2)
-                {
-                    secondReversePairID_2 = i;
-                    break;
-                }
-            }
-
-            //(6, 3) Check the stair array if this tuple has a mark available with the current counter in that position
-            if (secondReversePairID_1 != -1 && secondReversePairID_2 != -1)
-            {
-                //(6, 3)
-                if (secondReversePairID_1 < stair_array[secondReversePairID_2].Length) //verify that the second index is inside the array
-                {
-                    if (stair_array[secondReversePairID_2][secondReversePairID_1] == counter) //if its inside the range, then check its mark
-                    { 
-                        return true;
+                    // (7,2)
+                    if (firstPairID_2 < stair_array[firstPairID_1].Length)
+                    {
+                        if (stair_array[firstPairID_1][firstPairID_2] == counter)
+                        {
+                            return true;
+                        }
                     }
 
                 }
+
+                #endregion
+
+                #region Primera Tupla Reverse Con Letra
+                //Get both state's destination with the first letter of the alphabet
+                int reversePairID_1 = Get_Destination_From_State(vState, this.alphabet[k]); //(first_state, a) = 2, returns -1 if this state didnt have a destination
+                int reversePairID_2 = Get_Destination_From_State(hState, this.alphabet[k]); //(second_state, a) = 7
+
+                //Find this ID its real index from the vertical and horizontal position
+                for (int i = 0; i < state_nodes.Count - 1; i++)
+                {
+                    if (hArray[i].id == reversePairID_1)
+                    {
+                        reversePairID_1 = i;
+                        break;
+                    }
+                }
+
+                //X2
+                for (int i = 0; i < state_nodes.Count - 1; i++)
+                {
+                    //Missing by one index! Estoy buscando por id y por nombre y por eso tira indeces diferentes
+                    if (vArray[i].id == reversePairID_2)
+                    {
+                        reversePairID_2 = i;
+                        break;
+                    }
+                }
+
+                // (2, 7) Check the stair array if this tuple has a mark available with the current counter in that position
+                if (reversePairID_1 != -1 && reversePairID_2 != -1)
+                {
+                    // (2, 7)
+                    if (reversePairID_1 < stair_array[reversePairID_2].Length)
+                    {
+                        if (stair_array[reversePairID_2][reversePairID_1] == counter)
+                        {
+                            return true;
+                        }
+                    }
+
+                }
+
+                #endregion
+
             }
-
-            #endregion
-
 
             return false;
         }
@@ -429,9 +380,171 @@ namespace Computer_Theory___Minimize_an_Automaton
         ///     And then converts the stair 2D array into a list of StateNode objects
         /// </summary>
         /// <returns></returns>
-        private List<StateNode> Convert_To_List()
+        private List<StateNode> Convert_To_List(StateNode[] vArray, StateNode[] hArray, sbyte[][] stair_array)
         {
-            return new List<StateNode>();
+            List<StateNode> new_state_nodes = new List<StateNode>();
+            List<int> ids_used = new List<int>();
+
+            int id_counter = 0, y_counts = 0;
+            double x = 70, y = 50; 
+
+            /* Find in the stair array an empty spot and merged the two states */
+            for (int i = 0; i < state_nodes.Count - 1; i++)
+            {
+                for (int j = 0; j < stair_array[i].Length; j++)
+                {
+                    //If this position in the array is empty, it means it can be merged
+                    if(stair_array[i][j] == -1)
+                    {
+                        StateNode nodeA = vArray[i];
+                        StateNode nodeB = hArray[j];
+
+                        //Update both statenode's merge info
+                        int indexOFNodeA = state_nodes.IndexOf(nodeA);
+                        int indexOFNodeB = state_nodes.IndexOf(nodeB);
+
+                        state_nodes[indexOFNodeA].mergeInfo = new MergeInfo(nodeB.name, nodeA.name, true);
+                        state_nodes[indexOFNodeB].mergeInfo = new MergeInfo(nodeA.name, nodeB.name, true);
+
+
+
+                        //Add both state's id soo that they are no longer used
+                        ids_used.Add(nodeA.id);
+                        ids_used.Add(nodeB.id);
+
+                        StateNode new_state_node = new StateNode();
+
+                        new_state_node.name = nodeB.name + ", " + nodeA.name;
+                        new_state_node.id = id_counter++;
+                        new_state_node.isInitial = nodeA.isInitial || nodeB.isInitial;
+                        new_state_node.isFinal= nodeA.isFinal || nodeB.isFinal;
+                        new_state_node.coordinate = new Coordinate(x, y);
+
+                        //The new state node should remember its transitions
+                        new_state_node.transitions = new List<Transition>(nodeA.transitions);
+                        new_state_node.transitions.AddRange(nodeB.transitions);
+
+                        new_state_nodes.Add(new_state_node);
+
+                        x += 100;
+                        y_counts++;
+
+                        if(y_counts == 2)
+                        {
+                            y_counts = 0;
+                            y += 100;
+                        }
+
+                    }
+                }
+            }
+
+            /* Add all the old unrepeated states that in the new state nodes list */
+            foreach(StateNode oldStateNode in state_nodes)
+            {
+                bool isThisNodeNew = true;
+
+                foreach(int id_used in ids_used)
+                {
+                    if(oldStateNode.id == id_used)
+                    {
+                        isThisNodeNew = false;
+                        break;
+                    }
+                }
+
+                if (isThisNodeNew)
+                {
+                    oldStateNode.id = id_counter++;
+                    new_state_nodes.Add(oldStateNode);
+                }
+            }
+
+
+            /* Update transition in every state */
+
+            for(int i = 0; i < new_state_nodes.Count; i++)
+            {
+                for(int j = 0; j < new_state_nodes[i].transitions.Count; j++)
+                {
+                    Transition t;
+
+                    foreach (StateNode lookingForDestinationState in new_state_nodes)
+                    {
+                        if (lookingForDestinationState.name == new_state_nodes[i].transitions[j].destination_name || lookingForDestinationState.name.Contains(new_state_nodes[i].transitions[j].destination_name))
+                        {
+                            t = new Transition(lookingForDestinationState.id, new_state_nodes[i].transitions[j].read, lookingForDestinationState.name);
+                            new_state_nodes[i].transitions[j] = t;
+                        }
+                    }
+                }
+            }
+
+            /* Eliminate Duplicates */
+             //List<T> withDupes = LoadSomeData();
+             //List<T> noDupes = withDupes.Distinct().ToList();
+
+            for (int i = 0; i < new_state_nodes.Count; i++)
+            {
+                for (int j = 0; j < new_state_nodes[i].transitions.Count; j++)
+                {
+                    new_state_nodes[i].transitions = new_state_nodes[i].transitions.Distinct().ToList();
+                }
+            }
+
+
+                    //foreach(StateNode newState in new_state_nodes)
+                    //{
+                    //    foreach(Transition transition in newState.transitions)
+                    //    {
+                    //        Transition t;
+
+                    //        foreach(StateNode lookingForDestinationState in new_state_nodes)
+                    //        {
+                    //            if(lookingForDestinationState.name == transition.destination_name || lookingForDestinationState.name.Contains(transition.destination_name))
+                    //            {
+                    //                t = new Transition(lookingForDestinationState.id, transition.read, lookingForDestinationState.name);
+                    //                transition.Value = t;
+                    //            }
+                    //        }
+                    //    }
+                    //}
+
+                    //foreach(StateNode stateNode in state_nodes)
+                    //{
+                    //    if (stateNode.mergeInfo.isMerge)
+                    //    {
+                    //        //Find the new state with the info of the old state to add the transitions
+                    //        string merge_name = stateNode.mergeInfo.name_before_merge + ", " + stateNode.mergeInfo.merge_with;
+
+                    //        foreach(StateNode newStateNode in new_state_nodes)
+                    //        {
+                    //           if(newStateNode.name == merge_name)
+                    //           {
+                    //                newStateNode.transitions = stateNode.transitions;
+
+                    //                //check first if the old statenode transition is also merge, if it is, we have to point to the merged state
+                    //                foreach(Transition transition in stateNode.transitions)
+                    //                {
+                    //                    string destination_name = transition.destination_name;
+
+                    //                    foreach(StateNode findNewStateName in new_state_nodes)
+                    //                    {
+                    //                        if (findNewStateName.name.Contains(destination_name))
+                    //                        {
+                    //                            //This means that the original state transition destination is merged, so we need to point to it
+
+                    //                        }
+                    //                    }
+
+                    //                }
+
+                    //           }
+                    //        }
+                    //    }
+                    //}
+
+                    return new_state_nodes;
         }
 
         /// <summary>
