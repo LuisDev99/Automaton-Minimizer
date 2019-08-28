@@ -22,7 +22,7 @@ namespace Computer_Theory___Minimize_an_Automaton
         {
             //jff_handler = new JffReader("C:\\Users\\DELL\\Documents\\automata.jff");
             jff_handler = null;
-            txtJFFFilePath.Text = "C:\\Users\\DELL\\Documents\\ejem1.jff";
+            txtJFFFilePath.Text = "C:\\Users\\DELL\\Documents\\Jffs\\DFA_1.jff";
         }
 
         private void BtnLoad_Click(object sender, EventArgs e)

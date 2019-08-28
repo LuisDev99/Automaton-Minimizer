@@ -117,9 +117,9 @@ namespace Computer_Theory___Minimize_an_Automaton
 
                                     Search_and_Add_Node_Transition(from, to, read);
 
-                                    if (!this.alphabet.Any( e => e == read))
+                                    if (!this.alphabet.Any(e => e == read))
                                         this.alphabet.Add(read);
-
+                               
                                     break;
                                 }
                             }
@@ -144,10 +144,16 @@ namespace Computer_Theory___Minimize_an_Automaton
             StateNode[] vertical_states, horizontal_states;
             sbyte[][] stair_array;
 
+            /* Check if its DFA */
+            if (!Check_IF_DFA())
+            {
+                return "The loaded automaton isnt a DFA";
+            }
+
             /* First, find unreacheable states and delete them */
             Delete_Unreacheable_States();
 
-            /*Create*/
+            /*Initialize*/
             vertical_states = new StateNode[state_nodes.Count - 1];
             horizontal_states = new StateNode[state_nodes.Count - 1];
             stair_array = new sbyte[state_nodes.Count - 1][];
@@ -157,12 +163,12 @@ namespace Computer_Theory___Minimize_an_Automaton
             Build_Vertical_State_Array(ref vertical_states);
             Build_Horizontal_State_Array(ref horizontal_states);
 
-            /* Then, mark those states that are distintive from one another */
+            /* Then, mark with 0 those states that are distintive from one another */
             bool is_any_state_distinct = Find_Distinct_State(vertical_states, horizontal_states, ref stair_array);
 
             /* If no state was distinct from one or another, then just stop the algorithm */
             if (!is_any_state_distinct)
-                return "Automaton is minimized already!";
+                return "The automaton cant be minimized! All states are the same (final or not final)";
 
             /* Keep doing a while loop till no new distinct states appear */
             bool did_new_state_appear = false;
@@ -179,7 +185,7 @@ namespace Computer_Theory___Minimize_an_Automaton
 
             if (Automaton_Is_Already_Minimized(stair_array))
             {
-                return "Automaton is minimized already!";
+                return "The loaded Automaton is minimized already!";
             }
 
    
@@ -189,13 +195,38 @@ namespace Computer_Theory___Minimize_an_Automaton
             return "Success! The loaded automaton is minimized! Try saving it now";
         }
 
+        private bool Check_IF_DFA()
+        {
+            /*First, check in every transition if a character didnt repeat*/
+            foreach(StateNode state in state_nodes)
+            {
+                for(int i = 0; i  < state.transitions.Count; i++)
+                {
+                    for(int j = i + 1; j < state.transitions.Count; j++)
+                    {
+                        if (state.transitions[i].read == state.transitions[j].read)
+                            return false;
+                    }
+                }
+            }
+
+            /*Now, check if every state's transition has a length equal to the alphabet size */
+            foreach(StateNode state in state_nodes)
+            {
+                if (state.transitions.Count != this.alphabet.Count)
+                    return false;
+            }
+
+            return true;
+        }
+
         private bool Automaton_Is_Already_Minimized(sbyte[][] stair_array)
         {
             for(int i = 0; i < state_nodes.Count - 1; i++)
             {
                 for(int j = 0; j < stair_array[i].Length; j++)
                 {
-                    //if a position is empty (-1) it means that the automaton can be minimized
+                    //if at least one position is empty (-1) in the stair array, it means that the automaton can be minimized
                     if (stair_array[i][j] == -1)
                         return false;
                 }
@@ -215,7 +246,7 @@ namespace Computer_Theory___Minimize_an_Automaton
                     int previous_count = counter - 1;
                     if(RelationShip_Exist_Between_State(vArray[i], hArray[j], stair_array, Convert.ToSByte(previous_count), vArray, hArray))
                     {
-                        if(stair_array[i][j] == -1) //Only mark if that spot was empty only
+                        if(stair_array[i][j] == -1) //Only mark if that spot was empty (-1)
                             stair_array[i][j] = counter;
 
                         was_a_state_distinct = true;
@@ -344,6 +375,7 @@ namespace Computer_Theory___Minimize_an_Automaton
 
         private void Build_Horizontal_State_Array(ref StateNode[] horizontal_states)
         {
+            /* To create the horizontal states, we need to add all the states except the last one*/
             for (int i = 0; i < state_nodes.Count - 1; i++)
             {
                 horizontal_states[i] = state_nodes[i];
@@ -352,7 +384,8 @@ namespace Computer_Theory___Minimize_an_Automaton
 
         private void Build_Vertical_State_Array(ref StateNode[] vertical_states)
         {
-            for(int i = 0; i < state_nodes.Count - 1; i++)
+            /* To create the vertical states, we need to add all the states except the first one*/
+            for (int i = 0; i < state_nodes.Count - 1; i++)
             {
                 vertical_states[i] = state_nodes[i + 1];
             }
@@ -550,6 +583,7 @@ namespace Computer_Theory___Minimize_an_Automaton
         /// <summary>
         ///     First function that gets call when starting the minimize algorithm
         ///     Compares two nodes and marks inside the array if they are initial and final states
+        ///     If all the states were the same, this function will return false to tell that this automaton cant be minimized
         /// </summary>
         /// <param name="stair_array">Gets by reference the stair array</param>
         /// <returns></returns>
@@ -564,8 +598,7 @@ namespace Computer_Theory___Minimize_an_Automaton
                     if (vArray[i].isFinal != hArray[j].isFinal) //If they are distinct
                     {
                         stair_array[i][j] = 0; //TODO: Change this to zero
-                        was_a_state_distinct = true;
-                        
+                        was_a_state_distinct = true;            
                     }
                 }
             }
